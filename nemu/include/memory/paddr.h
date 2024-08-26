@@ -18,7 +18,7 @@
 
 #include <common.h>
 
-#define PMEM_LEFT  ((paddr_t)CONFIG_MBASE)
+#define PMEM_LEFT  ((paddr_t)CONFIG_MBASE)//0x80000000 risv32起始
 #define PMEM_RIGHT ((paddr_t)CONFIG_MBASE + CONFIG_MSIZE - 1)
 #define RESET_VECTOR (PMEM_LEFT + CONFIG_PC_RESET_OFFSET)
 

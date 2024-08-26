@@ -21,11 +21,24 @@ const char *regs[] = {
   "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
   "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
-};
+};//$0|ra|s[0-11]|a[0-7]|t[0-6]|[sgt]p|
 
 void isa_reg_display() {
+
+  int length=sizeof(regs)/sizeof(regs[0]);
+  for(int i=0;i<length;i++){
+    printf("%s的值为%d\n",regs[i],cpu.gpr[i]);
+  }
+
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
+  int length=sizeof(regs)/sizeof(regs[0]);
+  for(int i=0;i<length;i++){
+    if(regs[i]==s){
+      *success=true;
+      return cpu.gpr[i];
+    }
+  }
   return 0;
 }
