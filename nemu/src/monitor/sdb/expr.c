@@ -159,12 +159,12 @@ static word_t eval(int p, int q) {
         if(left_num!=0) continue;
         else {
           op=i;
-          break;
+          is_first=2;
         }
       }
       if(tokens[i].type==TK_mul||tokens[i].type==TK_del){
         if(left_num==0){
-          if(is_first==-1||is_first==0){
+          if(is_first==-1||is_first==0||is_first==1){
             op=i;
             is_first=1;
           }
@@ -183,10 +183,18 @@ static word_t eval(int p, int q) {
     }
     val1 = eval(p, op - 1);
     switch (tokens[op].type) {
-      case TK_plus: return val1 + val2;
-      case TK_minus: return val1-val2;
-      case TK_mul: return val1*val2;
-      case TK_del: return val1/val2;
+      case TK_plus: 
+        printf("符号为%d %d\n",tokens[op].type,val1+val2);
+        return val1 + val2;
+      case TK_minus: 
+        printf("符号为%d %d\n",tokens[op].type,val1-val2);
+        return val1-val2;
+      case TK_mul: 
+       printf("符号为%d %d\n",tokens[op].type,val1*val2);
+       return val1*val2;
+      case TK_del: 
+       printf("符号为%d %d\n",tokens[op].type,val1/val2);
+       return val1/val2;
       default: assert(0);
     }
   }
@@ -281,6 +289,9 @@ word_t expr(char *e, bool *success) {
   if (!make_token(e)) {
     *success = false;
     return 0;
+  }
+  for(int i=0;i<nr_token;i++){
+    printf("类型：%d 值为 %s\n",tokens[i].type,tokens[i].str);
   }
   word_t ans=eval(0,nr_token-1);
   printf("expr:%d\n",ans);
