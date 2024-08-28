@@ -49,7 +49,7 @@ static struct rule {
   {"!=",TK_NEQ},
   {"\\$(a[0-7]|\\$0|ra|[sgt]p|t[0-6]|a[0-7]|s([0-9]|1[0-1]))",TK_REG},
   {"0[xX][0-9a-fA-F]+",TK_HEX},
-  {"[0-9]+",TK_NUM}
+  {"[0-9]+",TK_NUM},
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -143,6 +143,9 @@ static word_t eval(int p, int q) {
         }
         else continue;
       }
+      if(tokens[i].type==TK_NOTYPE){
+        continue;
+      }
       if(tokens[i].type==TK_lef){
         left_num++;
       }
@@ -176,7 +179,7 @@ static word_t eval(int p, int q) {
       if(tokens[op].type==TK_NEG){
         return -1*val2;
       }
-      else return vaddr_read(val2,4);
+      else{ return vaddr_read(val2,4);}
     }
     val1 = eval(p, op - 1);
     switch (tokens[op].type) {
@@ -222,11 +225,13 @@ static bool make_token(char *e) {
           case TK_HEX:
             tokens[nr_token].type=rules[i].token_type;
             strncpy(tokens[nr_token].str, substr_start, substr_len);
+            tokens[nr_token].str[substr_len]='\0';
             nr_token++;
             break;
           case TK_NUM:
             tokens[nr_token].type=rules[i].token_type;
             strncpy(tokens[nr_token].str, substr_start, substr_len);
+            tokens[nr_token].str[substr_len]='\0';
             nr_token++;
             break;
           case TK_plus:
@@ -253,6 +258,8 @@ static bool make_token(char *e) {
           case TK_rig:
             tokens[nr_token++].type=rules[i].token_type;
             break;
+          case TK_NOTYPE:
+            break;
           default:
             printf("np matches");
             break;
@@ -275,14 +282,11 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
-  for(int i=0;i<nr_token;i++){
-    printf("%d\n",tokens[i].type);
-
-  }
-  printf("%d",eval(0,nr_token-1));
+  word_t ans=eval(0,nr_token-1);
+  printf("expr:%d\n",ans);
   
   /* TODO: Insert codes to evaluate the expression. */
   //TODO();
 
-  return 0;
+  return ans;
 }
