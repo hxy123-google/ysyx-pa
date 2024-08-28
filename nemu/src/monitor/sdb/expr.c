@@ -78,7 +78,7 @@ typedef struct token {
   char str[32];
 } Token;
 
-static Token tokens[32] __attribute__((used)) = {};
+static Token tokens[40] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 static bool check_parenthess(int p,int q,bool *ok){
   if(tokens[p].type!=TK_lef||tokens[q].type!=TK_rig){
@@ -94,8 +94,10 @@ static bool check_parenthess(int p,int q,bool *ok){
       //if(left_num<0) return false;
     }
   }
+  printf("%d",left_num);
   if(left_num!=0){
     *ok=false;
+    printf("表达式多括号");
     return false;
   }
   return true;
@@ -226,6 +228,7 @@ static bool make_token(char *e) {
   int i;
   regmatch_t pmatch;
   nr_token = 0;
+  printf("%s\n",e);
   while (e[position] != '\0') {
     /* Try all rules one by one. */
     for (i = 0; i < NR_REGEX; i ++) {
@@ -311,6 +314,7 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
+
   // for(int i=0;i<nr_token;i++){
   //   printf("类型：%d 值为 %s\n",tokens[i].type,tokens[i].str);
   // }
