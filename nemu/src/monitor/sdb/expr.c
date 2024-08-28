@@ -80,7 +80,7 @@ typedef struct token {
 
 static Token tokens[32] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
-static bool check_parenthess(int p,int q){
+static bool check_parenthess(int p,int q,bool *ok){
   if(tokens[p].type!=TK_lef||tokens[q].type!=TK_rig){
     return false;
   }
@@ -94,14 +94,18 @@ static bool check_parenthess(int p,int q){
       //if(left_num<0) return false;
     }
   }
-  if(left_num!=0) return false;
+  if(left_num!=0){
+    *ok=false;
+    return false;
+  }
   return true;
 
 };
-static word_t eval(int p, int q) { 
+static word_t eval(int p, int q,bool *ok) { 
+  *ok=true;
   if (p > q) {
-    assert(0);
-    return -1;
+    *ok=false;
+    return 0;
     /* Bad expression */
   }
   else if (p == q) {
@@ -120,16 +124,20 @@ static word_t eval(int p, int q) {
       num=isa_reg_str2val(tokens[p].str,&t);
       return num;
     }
+    if(tokens[p].type!=TK_REG&&tokens[p].type!=TK_HEX&&tokens[p].type!=TK_NUM){
+      *ok=false;
+      return 0;
+    }
     /* Single token.
      * For now this token should be a number.
      * Return the value of the number.
      */
   }
-  else if (check_parenthess(p, q) == true) {
+  else if (check_parenthess(p, q,ok) == true) {
     /* The expression is surrounded by a matched pair of parentheses.
      * If that is the case, just throw away the parentheses.
      */
-    return eval(p + 1, q - 1);
+    return eval(p + 1, q - 1,ok);
   }
   else {
     int is_first=-1;//-1代表没有，0代表*和-，1代表* /，2代表+ -
@@ -173,27 +181,40 @@ static word_t eval(int p, int q) {
         else continue;
       }
     }
-    word_t val1,val2;
-    val2 = eval(op + 1, q);
+    bool ok1,ok2;
+    int val1,val2;
+    val2 = eval(op + 1, q,&ok2);
+    if(ok2==false){
+      *ok=false;
+      return 0;
+    }
     if(tokens[op].type==TK_DEFER||tokens[op].type==TK_NEG){
       if(tokens[op].type==TK_NEG){
         return -1*val2;
       }
       else{ return vaddr_read(val2,4);}
     }
-    val1 = eval(p, op - 1);
+    val1 = eval(p, op - 1,&ok1);
+    if(ok1==false){
+      *ok=false;
+      return 0;
+    }
     switch (tokens[op].type) {
       case TK_plus: 
-        printf("符号为%d %d\n",tokens[op].type,val1+val2);
+        printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1+val2);
         return val1 + val2;
       case TK_minus: 
-        printf("符号为%d %d\n",tokens[op].type,val1-val2);
+        printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1-val2);
         return val1-val2;
       case TK_mul: 
-       printf("符号为%d %d\n",tokens[op].type,val1*val2);
+       printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1*val2);
        return val1*val2;
       case TK_del: 
-       printf("符号为%d %d\n",tokens[op].type,val1/val2);
+       printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1/val2);
+       if(val2==0){
+        *ok=false;
+        return 0;
+       }
        return val1/val2;
       default: assert(0);
     }
@@ -290,11 +311,12 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
-  for(int i=0;i<nr_token;i++){
-    printf("类型：%d 值为 %s\n",tokens[i].type,tokens[i].str);
-  }
-  word_t ans=eval(0,nr_token-1);
-  printf("expr:%d\n",ans);
+  // for(int i=0;i<nr_token;i++){
+  //   printf("类型：%d 值为 %s\n",tokens[i].type,tokens[i].str);
+  // }
+  word_t ans=eval(0,nr_token-1,success);
+  assert(*success);
+  printf("expr:%u\n",ans);
   
   /* TODO: Insert codes to evaluate the expression. */
   //TODO();

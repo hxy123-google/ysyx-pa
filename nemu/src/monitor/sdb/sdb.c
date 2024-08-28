@@ -236,7 +236,7 @@ void test_expr() {
     e[read-1] = '\0';
     //printf("e为%c，read为%ld\n",e[read-2],read);
     word_t res = expr(e, &success);
-    //assert(success);
+    assert(success);
     if (res != correct_res) {
       puts(e);
       printf("expected: %u, got: %u\n", correct_res, res);
