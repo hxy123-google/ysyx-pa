@@ -20,11 +20,23 @@
 #include "sdb.h"
 #include <memory/vaddr.h>
 #include <memory/paddr.h>
-static int is_batch_mode = false;
 
+static int is_batch_mode = false;
+typedef struct watchpoint {
+  int NO;//表示监视点的序号
+  struct watchpoint *next;
+  int old_value;
+  int new_value;
+  char expr[100];
+  /* TODO: Add more members if necessary */
+
+} WP;
 void init_regex();
 void init_wp_pool();
-
+WP* new_wp(void);
+void free_wp(int num);
+void create_watchpoint(char * args);
+void display_watchpoint();
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
   static char *line_read = NULL;
@@ -66,6 +78,9 @@ static int cmd_info(char *args){
   char SUBCMD;
   sscanf(args,"%c",&SUBCMD);
   if(SUBCMD=='r') isa_reg_display();
+  else if(SUBCMD=='w'){
+    display_watchpoint();
+  }
   return 0;
 }
 // static int cmd_x(char *args) {
@@ -136,6 +151,14 @@ static int cmd_p(char*args){
 
     return 0;
 }
+static int cmd_w(char*args){
+  create_watchpoint(args);
+  return 0;
+}
+static int cmd_d(char*args){
+  free_wp(atoi(args));
+  return 0;
+}
 static struct {
   const char *name;
   const char *description;
@@ -146,9 +169,10 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   {"si","让程序单步执行N条指令后暂停执行, 当N没有给出时, 缺省为1",cmd_si},
   {"info", "info r: 打印寄存器状态\ninfo w :打印监视点信息",cmd_info},
-  {"info", "info r: 打印寄存器状态\ninfo w :打印监视点信息",cmd_info},
   {"x","求出表达式EXPR的值, 将结果作为起始内存地址, 以十六进制形式输出连续的N个4字节",cmd_x},
-  {"p","求出表达式EXPR的值, EXPR支持的运算请见调试中的表达式求值小节",cmd_p}
+  {"p","求出表达式EXPR的值, EXPR支持的运算请见调试中的表达式求值小节",cmd_p},
+  {"w","当表达式EXPR的值发生变化时, 暂停程序执行",cmd_w},
+  {"d","删除序号为N的监视点",cmd_d}
   /* TODO: Add more commands */
   
 };
