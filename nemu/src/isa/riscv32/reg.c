@@ -33,12 +33,16 @@ void isa_reg_display() {
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
+  char p[]="$pc";
   int length=sizeof(regs)/sizeof(regs[0]);
   for(int i=0;i<length;i++){
     if(regs[i]==s){
       *success=true;
       return cpu.gpr[i];
     }
+  }
+  if(s[0]==p[0]&&s[1]==p[1]&&s[2]==p[2]){
+    return cpu.pc;
   }
   return 0;
 }

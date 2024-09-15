@@ -86,9 +86,11 @@ void free_wp(int num){
   }
   for(p=head;p->next!=NULL;p=p->next){
     if(p->next->NO==num){
+      if(p->next->next==NULL) n_tail=p;
       temp=p->next;
       p->next=p->next->next;
       temp->next=NULL;
+      break;
     }
   }
   if(temp==NULL){
@@ -100,7 +102,7 @@ void free_wp(int num){
     f_tail=temp;
   }else{
     f_tail->next=temp;
-    f_tail=temp;
+    f_tail=f_tail->next;
   }
   printf("删除成功\n");
   return;
@@ -116,9 +118,29 @@ void create_watchpoint(char * args){
 }
 void display_watchpoint(){
   for(WP* p=head;p!=NULL;p=p->next){
-      printf("Watchpoint.No: %d, expr = \"%s\", old_value = %d, new_value = %d\n",
-     p->NO, p->expr,p->old_value, p->new_value);
+      printf("Watchpoint.No: %d, expr = \"%s\", now_value = %d\n",
+     p->NO, p->expr,p->old_value);
     }
 }
+void wp_check()
+{
+	WP* pnode = NULL;
+	pnode = head;
+	while(pnode != NULL)
+	{
+		bool success = true;
+		word_t expr_result = expr(pnode -> expr, &success);
+		Log("the previous_value of watchpoint %s is %u", pnode -> expr, pnode -> old_value);
+		Log("the current value of watchpoint %s is %u", pnode -> expr, expr_result);
+		if(expr_result != pnode -> old_value)
+		{ 
+			printf("The program has stopped due to watchpoint diff\n");
+			nemu_state.state = NEMU_STOP;
+			return ;
+		}
+    pnode=pnode->next;
+	}
+}
+
 /* TODO: Implement the functionality of watchpoint */
 

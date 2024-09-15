@@ -29,7 +29,7 @@ static const uint32_t img [] = {
 static void restart() {
   /* Set the initial program counter. */
   cpu.pc = RESET_VECTOR;
-
+  //printf("%u",RESET_VECTOR);
   /* The zero register is always 0. */
   cpu.gpr[0] = 0;//通用寄存器置0
 }
@@ -38,7 +38,6 @@ void init_isa() {
   /* Load built-in image. */
   
   memcpy(guest_to_host(RESET_VECTOR), img, sizeof(img));//把img放到内存中
-
   /* Initialize this virtual computer system. *///pc指向img起始位置
   restart();
 }

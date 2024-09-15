@@ -23,7 +23,8 @@
 #include <memory/paddr.h>
 enum {
   TK_NOTYPE = 256, TK_EQ=0,TK_NEQ=1,TK_REG=3,TK_HEX=4,TK_NUM=5,TK_plus=6,
-  TK_minus=7,TK_mul=8,TK_del=9,TK_lef=10,TK_rig=11,TK_DEFER=12,TK_NEG=13
+  TK_minus=7,TK_mul=8,TK_del=9,TK_lef=10,TK_rig=11,TK_DEFER=12,TK_NEG=13,
+  AND=14,OR=15,TK_N=16
   
   /* TODO: Add more token types */
 
@@ -47,9 +48,12 @@ static struct rule {
   {"\\(",TK_lef},
   {"\\)",TK_rig},
   {"!=",TK_NEQ},
-  {"\\$(a[0-7]|\\$0|ra|[sgt]p|t[0-6]|a[0-7]|s([0-9]|1[0-1]))",TK_REG},
+  {"\\$(a[0-7]|\\$0|ra|[sgt]p|t[0-6]|a[0-7]|s([0-9]|1[0-1])|pc)",TK_REG},
   {"0[xX][0-9a-fA-F]+",TK_HEX},
   {"[0-9]+",TK_NUM},
+  {"\\&\\&", AND},
+  {"\\|\\|", OR},
+  {"\\!", '!'},
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -142,7 +146,7 @@ static word_t eval(int p, int q,bool *ok) {
     return eval(p + 1, q - 1,ok);
   }
   else {
-    int is_first=-1;//-1代表没有，0代表*和-，1代表* /，2代表+ -
+    int is_first=-1;//-1代表没有，0代表*和-，1代表* /，2代表+ -,3 || &&
     int op=-1;
     int left_num=0;
     for(int i=p;i<=q;i++){
@@ -165,11 +169,20 @@ static word_t eval(int p, int q,bool *ok) {
       if(tokens[i].type==TK_NUM||tokens[i].type==TK_HEX||tokens[i].type==TK_REG){
         continue;
       }
+      if(tokens[i].type==AND||tokens[i].type==OR){
+        if(left_num!=0) continue;
+        else{
+          op=i;
+          is_first=3;
+        }
+      }
       if(tokens[i].type==TK_plus||tokens[i].type==TK_minus){
         if(left_num!=0) continue;
         else {
-          op=i;
-          is_first=2;
+          if(is_first!=3){
+            op=i;
+            is_first=2;
+          }
         }
       }
       if(tokens[i].type==TK_mul||tokens[i].type==TK_del){
@@ -218,6 +231,10 @@ static word_t eval(int p, int q,bool *ok) {
         return 0;
        }
        return val1/val2;
+      case AND:
+       return val1&&val2;
+      case OR:
+       return val1||val2;
       default: assert(0);
     }
   }
@@ -288,6 +305,15 @@ static bool make_token(char *e) {
             tokens[nr_token++].type=rules[i].token_type;
             break;
           case TK_rig:
+            tokens[nr_token++].type=rules[i].token_type;
+            break;
+          case AND:
+            tokens[nr_token++].type=rules[i].token_type;
+            break;
+          case OR:
+            tokens[nr_token++].type=rules[i].token_type;
+            break;
+          case TK_N:
             tokens[nr_token++].type=rules[i].token_type;
             break;
           case TK_NOTYPE:

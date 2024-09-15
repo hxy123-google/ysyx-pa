@@ -12,7 +12,6 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
 #include <isa.h>
 #include <cpu/cpu.h>
 #include <readline/readline.h>
@@ -20,23 +19,9 @@
 #include "sdb.h"
 #include <memory/vaddr.h>
 #include <memory/paddr.h>
-
-static int is_batch_mode = false;
-typedef struct watchpoint {
-  int NO;//表示监视点的序号
-  struct watchpoint *next;
-  int old_value;
-  int new_value;
-  char expr[100];
-  /* TODO: Add more members if necessary */
-
-} WP;
+#include "watchpoint.h"
+ static int is_batch_mode = false;
 void init_regex();
-void init_wp_pool();
-WP* new_wp(void);
-void free_wp(int num);
-void create_watchpoint(char * args);
-void display_watchpoint();
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
   static char *line_read = NULL;
