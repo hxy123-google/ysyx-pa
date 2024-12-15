@@ -29,6 +29,35 @@ uint64_t g_nr_guest_inst = 0;
 static uint64_t g_timer = 0; // unit: us
 static bool g_print_step = false;
 
+/*----------------定义一个环形缓冲区----------------------------*/
+#define IRING_BUF_SIZE 16
+#define IRING_BUF_START_INDEX 3 	//开始位置为3, 为-->留出空间
+static char iringbuf[IRING_BUF_SIZE][IRING_BUF_START_INDEX + 128];
+static size_t iringbuf_index = 0;
+static size_t iringbuf_start=0;
+static bool is_first=1;
+static void init_iringbuf() {
+	iringbuf_index = 0;
+	for(int i = iringbuf_start; i < IRING_BUF_SIZE; i++) {
+		memset(iringbuf[i], ' ', IRING_BUF_START_INDEX);
+		iringbuf[i][IRING_BUF_START_INDEX] ='\0';
+	}
+}
+
+static void print_iringbuf() {
+  bool is_start=1;
+	const char prefix[IRING_BUF_START_INDEX] = "-->";
+	for(int i = iringbuf_start; i !=iringbuf_start||is_start==1; i=(i+1)%IRING_BUF_SIZE) {
+    is_start=0;
+		if(iringbuf[i][IRING_BUF_START_INDEX] == '\0')
+			break;
+		if(i + 1 == iringbuf_index)
+			strncpy(iringbuf[i], prefix, IRING_BUF_START_INDEX);
+		printf("%s\n", iringbuf[i]);
+	}	
+}
+
+
 void device_update();
 void wp_check();
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
@@ -66,6 +95,10 @@ static void exec_once(Decode *s, vaddr_t pc) {
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst.val, ilen);
+  if(iringbuf_index==iringbuf_start&&is_first==0) iringbuf_start=(iringbuf_start+1)%IRING_BUF_SIZE;
+  strcpy(iringbuf[iringbuf_index] + IRING_BUF_START_INDEX, s->logbuf);
+   is_first=0;
+  iringbuf_index = (iringbuf_index + 1) % IRING_BUF_SIZE;
 #else
   p[0] = '\0'; // the upstream llvm does not support loongarch32r
 #endif
@@ -99,6 +132,7 @@ void assert_fail_msg() {
 
 /* Simulate how the CPU works. */
 void cpu_exec(uint64_t n) {
+  init_iringbuf();
   g_print_step = (n < MAX_INST_TO_PRINT);
   switch (nemu_state.state) {
     case NEMU_END: case NEMU_ABORT:
@@ -110,7 +144,7 @@ void cpu_exec(uint64_t n) {
   uint64_t timer_start = get_time();
 
   execute(n);//执行几条指令
-
+  if(nemu_state.state!=NEMU_ABORT&&nemu_state.halt_ret!=0) print_iringbuf();
   uint64_t timer_end = get_time();
   g_timer += timer_end - timer_start;
 
