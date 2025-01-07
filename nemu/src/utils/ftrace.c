@@ -1,27 +1,46 @@
-#include <common.h>
+#include<stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <elf.h>
+#include <assert.h>
+#include <stdlib.h>
+#include<string.h>
+#include<common.h>
+typedef struct {
+	char name[32]; // func name, 32 should be enough
+	uint32_t addr;
+	unsigned char info;
+	uint32_t size;
+} SymEntry;
 
-void read_elf_header(int fd,ELF32_Ehdr *eh){
-    lseek(fd,0,SEEK_SET);
-    read(fd,eh,sizeof(ELF32_Ehdr));
+SymEntry *symbol_tbl = NULL; // dynamic allocated
+int symbol_tbl_size = 0;
+int call_depth = 0;
+typedef struct tail_rec_node {
+	paddr_t pc;
+	int depth;
+	struct tail_rec_node *next;
+} TailRecNode;
+TailRecNode *tail_rec_head = NULL; // linklist with head, dynamic allocated
+void read_elf_header(int fd,Elf32_Ehdr *eh){
+   assert(lseek(fd, 0, SEEK_SET) == 0);
+  assert(read(fd, (void *)eh, sizeof(Elf32_Ehdr)) == sizeof(Elf32_Ehdr));
     return ;
+}
+void read_section_header(int fd,Elf32_Ehdr eh,Elf32_Shdr * tb_sr){
+    lseek(fd,eh.e_shoff,SEEK_SET);
+    for(int i=0;i<eh.e_shnum;i++){
+       assert(read(fd,(void *)&tb_sr[i],eh.e_shentsize)==eh.e_shentsize);
+    }
+    return;
 }
 static void read_section(int fd, Elf32_Shdr sh, void *dst) {
 	assert(dst != NULL);
 	assert(lseek(fd, (off_t)sh.sh_offset, SEEK_SET) == (off_t)sh.sh_offset);
+    printf("0x%08x\n ", sh.sh_size);
 	assert(read(fd, dst, sh.sh_size) == sh.sh_size);
 }
-
-void read_section_header(int fd,ELF32_Ehdr eh,Elf32_Shdr * tb_sr){
-    lseek(fd,eh.e_shoff,SEEK_SET);
-    for(int i=0;i<eh.e_shnum;i++){
-       read(fd,(void *)&tb_sr[i],eh.e_shentsize);
-    }
-    return;
-}
-void display_elf_header(ELF32_Ehdr eh){
+void display_elf_header(Elf32_Ehdr eh){
     	/* Storage capacity class */
 	printf("Storage class\t= ");
 	switch(eh.e_ident[EI_CLASS])
@@ -171,7 +190,7 @@ void display_elf_header(ELF32_Ehdr eh){
 	}
 
 	/* Entry point */
-	printf("Entry point\t= 0x%08lx\n", eh.e_entry);
+	printf("Entry point\t= 0x%08x\n", eh.e_entry);
 
 	/* ELF header size in bytes */
 	printf("ELF header size\t= 0x%08x\n", eh.e_ehsize);
@@ -243,10 +262,11 @@ void display_elf_header(ELF32_Ehdr eh){
 
 	printf("\n");	/* End of ELF header */
 
-}static void display_section_headers(int fd, Elf32_Ehdr eh, Elf32_Shdr sh_tbl[]) {
+}
+static void display_section_headers(int fd, Elf32_Ehdr eh, Elf32_Shdr sh_tbl[]) {
   // warn: C99
 	char sh_str[sh_tbl[eh.e_shstrndx].sh_size];
-  read_section(fd, sh_tbl[eh.e_shstrndx], sh_str);
+    read_section(fd, sh_tbl[eh.e_shstrndx], sh_str);
   
 	/* Read section-header string-table */
 
@@ -272,27 +292,104 @@ void display_elf_header(ELF32_Ehdr eh){
 	printf("========================================\n");
 	printf("\n");	/* end of section header table */
 }
-void read_symbol_table(int fd,Elf32_Shdr * tb_sr,int sh_idx){
+
+void read_symbol_table(int fd,Elf32_Ehdr eh,Elf32_Shdr * tb_sr,int sh_idx){
     Elf32_Sym sym_tbl[tb_sr[sh_idx].sh_size];
     read_section(fd,tb_sr[sh_idx],sym_tbl);
+     int str_idx = tb_sr[sh_idx].sh_link;
+    char str_tbl[tb_sr[str_idx].sh_size];
+    read_section(fd, tb_sr[str_idx], str_tbl);
+    int sym_count = (tb_sr[sh_idx].sh_size / sizeof(Elf32_Sym));
+    for(int i=0;i<sym_count;i++){
+        printf("%d %s\n",i,str_tbl+sym_tbl[i].st_name);
+    }
+	printf("====================================================\n\n");
+
+	// read
+	symbol_tbl_size = sym_count;
+	symbol_tbl = malloc(sizeof(SymEntry) * sym_count);
+  for (int i = 0; i < sym_count; i++) {
+    symbol_tbl[i].addr = sym_tbl[i].st_value;
+		symbol_tbl[i].info = sym_tbl[i].st_info;
+		symbol_tbl[i].size = sym_tbl[i].st_size;
+		memset(symbol_tbl[i].name, 0, 32);
+		strncpy(symbol_tbl[i].name, str_tbl + sym_tbl[i].st_name, 31);
+		printf("%d %s ",i,str_tbl+sym_tbl[i].st_name);
+		printf("st_info :%u\n",sym_tbl[i].st_info);
+  }
 
 }
 void read_symbols(int fd, Elf32_Ehdr eh, Elf32_Shdr* tb_sr) {
   for (int i = 0; i < eh.e_shnum; i++) {
 		switch (tb_sr[i].sh_type) {
-		case SHT_SYMTAB: case SHT_DYNSYM:
-			read_symbol_table(fd, eh, tb_sr, i); break;
+		case SHT_SYMTAB: 
+		//case SHT_DYNSYM:
+			read_symbol_table(fd, eh, tb_sr, i); 
+            break;
 		}
   }
 }
 
-void parse_elf(const char * elf_file){ 
+int parse_elf(const char * elf_file){ 
     int fd=open(elf_file, O_RDONLY|O_SYNC);
-    ELF32_Ehdr eh;
-    char * buf=NULL;
-    read_elf_header(fd,eh);
+    Elf32_Ehdr eh;
+    read_elf_header(fd,&eh);
     display_elf_header(eh);
-    Elf32_Shdr tb_sr[eh.e_shentsize * eh.e_shnum];
+    //Elf32_Shdr tb_sr[eh.e_shentsize * eh.e_shnum];
+	Elf32_Shdr tb_sr[ eh.e_shnum+1];
     read_section_header(fd,eh,tb_sr);
-    read_symbols();
+    display_section_headers(fd,eh,tb_sr);
+    read_symbols(fd,eh,tb_sr);
+    return 0;
 }
+int find_symbol_function(uint32_t target,bool is_call){
+	for(int i=0;i<symbol_tbl_size;i++){
+		if(ELF32_ST_TYPE(symbol_tbl[i].info)==STT_FUNC){
+			if(is_call){
+				if(symbol_tbl[i].addr==target){
+				return i;
+			 }
+			}
+			else{
+				if (symbol_tbl[i].addr <= target && target < symbol_tbl[i].addr + symbol_tbl[i].size) return i;
+			}
+		}
+	}
+	return -1;
+}
+static void init_tail_rec_list() {
+	tail_rec_head = (TailRecNode *)malloc(sizeof(TailRecNode));
+	tail_rec_head->pc = 0;
+	tail_rec_head->next = NULL;
+}
+void insert_tail(paddr_t pc,int depth){
+	TailRecNode *node = (TailRecNode *)malloc(sizeof(TailRecNode));
+	node->next=tail_rec_head->next;
+	node->pc=pc;
+	node->depth=depth;
+	tail_rec_head=node;
+}
+void remove_tail(){
+	TailRecNode *node=tail_rec_head->next;
+	tail_rec_head_next=node->next;
+	free(node);
+}
+void trace_func_call(uint32_t pc,uint32_t target){
+	int i=find_symbol_function(target,true);
+	printf(FMT_PADDR ": call [%s@" FMT_PADDR "]\n",
+		pc,
+		i>=0?symbol_tbl[i].name:"???",
+		target
+	);
+	//find_symbol_function(target);
+	
+}
+void trace_func_ret(paddr_t pc){
+	int i=find_symbol_function(pc,false);
+	printf(FMT_PADDR ": ret [%s]\n",
+		pc,
+		i>=0?symbol_tbl[i].name:"???"
+	);
+
+}
+
