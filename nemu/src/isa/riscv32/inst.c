@@ -103,13 +103,10 @@ static int decode_exec(Decode *s) {
   INSTPAT("??????? ????? ????? 010 ????? 01000 11", sw    , S, Mw(src1 + imm, 4, src2));
   INSTPAT("??????? ????? ????? 000 ????? 11001 11", ret    , I, s -> dnpc = (src1 + imm) & ~1;
     if (s->isa.inst.val == 0x00008067) {
-      printf("return ");
     trace_func_ret(s->pc); // ret -> jalr x0, 0(x1)
     }else if (rd == 1) {
-      printf("jalr ");
     trace_func_call(s->pc, s->dnpc,false);
     }else if(rd==0&&imm==0){
-      printf("jl ");
       trace_func_call(s->pc,s->dnpc,true);
     };
      R(rd) = s -> pc + 4;);
@@ -118,7 +115,6 @@ static int decode_exec(Decode *s) {
   INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal     , J, s -> dnpc += imm-4 ;
                       IFDEF(CONFIG_ITRACE, { 
   if (rd == 1) { // x1: return address for jumps
-    printf("jal ");
     trace_func_call(s->pc, s->dnpc,false);
   }
 }); 
