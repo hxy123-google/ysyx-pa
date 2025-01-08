@@ -329,7 +329,11 @@ void read_symbols(int fd, Elf32_Ehdr eh, Elf32_Shdr* tb_sr) {
 		}
   }
 }
-
+static void init_tail_rec_list() {
+	tail_rec_head = (TailRecNode *)malloc(sizeof(TailRecNode));
+	tail_rec_head->pc = 0;
+	tail_rec_head->next = NULL;
+}
 int parse_elf(const char * elf_file){ 
     int fd=open(elf_file, O_RDONLY|O_SYNC);
     Elf32_Ehdr eh;
@@ -340,6 +344,8 @@ int parse_elf(const char * elf_file){
     read_section_header(fd,eh,tb_sr);
     display_section_headers(fd,eh,tb_sr);
     read_symbols(fd,eh,tb_sr);
+	init_tail_rec_list();
+	close(fd);
     return 0;
 }
 int find_symbol_function(uint32_t target,bool is_call){
@@ -357,39 +363,47 @@ int find_symbol_function(uint32_t target,bool is_call){
 	}
 	return -1;
 }
-static void init_tail_rec_list() {
-	tail_rec_head = (TailRecNode *)malloc(sizeof(TailRecNode));
-	tail_rec_head->pc = 0;
-	tail_rec_head->next = NULL;
-}
 void insert_tail(paddr_t pc,int depth){
 	TailRecNode *node = (TailRecNode *)malloc(sizeof(TailRecNode));
 	node->next=tail_rec_head->next;
 	node->pc=pc;
 	node->depth=depth;
-	tail_rec_head=node;
+	tail_rec_head->next=node;
 }
 void remove_tail(){
 	TailRecNode *node=tail_rec_head->next;
-	tail_rec_head_next=node->next;
+	tail_rec_head->next=node->next;
 	free(node);
 }
-void trace_func_call(uint32_t pc,uint32_t target){
+void trace_func_call(uint32_t pc,uint32_t target,bool is_tail){
+	if(symbol_tbl == NULL) return;
+	call_depth++;
 	int i=find_symbol_function(target,true);
+	printf("%d ",call_depth);
 	printf(FMT_PADDR ": call [%s@" FMT_PADDR "]\n",
 		pc,
 		i>=0?symbol_tbl[i].name:"???",
 		target
 	);
+	if(is_tail) insert_tail(pc,call_depth-1);
 	//find_symbol_function(target);
 	
 }
 void trace_func_ret(paddr_t pc){
 	int i=find_symbol_function(pc,false);
+	printf("%d ",call_depth);
 	printf(FMT_PADDR ": ret [%s]\n",
 		pc,
 		i>=0?symbol_tbl[i].name:"???"
 	);
-
+	call_depth--;
+	TailRecNode *node = tail_rec_head->next;
+	if(node!=NULL){
+		if(node->depth==call_depth){
+			paddr_t ret_target = node->pc;
+			remove_tail();
+			trace_func_ret(ret_target);
+		}
+	}
 }
 
