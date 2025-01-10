@@ -63,7 +63,7 @@ LINKAGE   = $(OBJS) \
   $(addsuffix -$(ARCH).a, $(join \
     $(addsuffix /build/, $(addprefix $(AM_HOME)/, $(LIBS))), \
     $(LIBS) ))
-$(info # ob:$(OBJS) Li:$(LIBS) link:$(LINKAGE))
+$(info # srcs:$(SRCS) dst:$(DST_DIR) ob:$(OBJS) Li:$(LIBS) link:$(LINKAGE))
 ## 3. General Compilation Flags
 
 ### (Cross) compilers, e.g., mips-linux-gnu-g++
@@ -127,6 +127,7 @@ $(DST_DIR)/%.o: %.S
 
 ### Rule (recursive make): build a dependent library (am, klib, ...)
 $(LIBS): %:
+	@echo $(LIBS)
 	@$(MAKE) -s -C $(AM_HOME)/$* archive
 
 ### Rule (link): objects (`*.o`) and libraries (`*.a`) -> `IMAGE.elf`, the final ELF binary to be packed into image (ld)
