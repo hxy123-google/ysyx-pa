@@ -111,14 +111,14 @@ void create_watchpoint(char * args){
   WP*p=new_wp();
   strcpy(p->expr,args);
   bool success=true;
- int tmp= expr(p->expr,&success);
+ word_t tmp= expr(p->expr,&success);
   if(success) p -> old_value = tmp;
   else printf("创建watchpoint的时候expr求值出现问题\n");
   printf("Create watchpoint No.%d success.\n", p -> NO);
 }
 void display_watchpoint(){
   for(WP* p=head;p!=NULL;p=p->next){
-      printf("Watchpoint.No: %d, expr = \"%s\", now_value = %d\n",
+      printf("Watchpoint.No: %d, expr = \"%s\", now_value = %x\n",
      p->NO, p->expr,p->old_value);
     }
 }

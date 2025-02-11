@@ -79,10 +79,10 @@ void init_regex() {
 
 typedef struct token {
   int type;
-  char str[32];
+  char str[200];
 } Token;
 
-static Token tokens[40] __attribute__((used)) = {};
+static Token tokens[400] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 static bool check_parenthess(int p,int q,bool *ok){
   if(tokens[p].type!=TK_lef||tokens[q].type!=TK_rig){
@@ -146,7 +146,7 @@ static word_t eval(int p, int q,bool *ok) {
     return eval(p + 1, q - 1,ok);
   }
   else {
-    int is_first=-1;//-1代表没有，0代表*和-，1代表* /，2代表+ -,3 || &&
+    int is_first=-1;//-1代表没有，0代表*和-，1代表* /，2代表+ -,3 == != 4 || 5&&
     int op=-1;
     int left_num=0;
     for(int i=p;i<=q;i++){
@@ -169,17 +169,35 @@ static word_t eval(int p, int q,bool *ok) {
       if(tokens[i].type==TK_NUM||tokens[i].type==TK_HEX||tokens[i].type==TK_REG){
         continue;
       }
-      if(tokens[i].type==AND||tokens[i].type==OR){
+      if(tokens[i].type==OR){
+        if(left_num!=0) continue;
+        else{
+          if(is_first<5){
+            op=i;
+            is_first=4;
+          }
+        }
+      }
+      if(tokens[i].type==AND){
         if(left_num!=0) continue;
         else{
           op=i;
-          is_first=3;
+          is_first=5;
+          }
+        }
+      if(tokens[i].type==TK_NEQ||tokens[i].type==TK_EQ){
+        if(left_num!=0) continue;
+        else{
+          if(is_first<4){
+            op=i;
+            is_first=3;
+          }
         }
       }
       if(tokens[i].type==TK_plus||tokens[i].type==TK_minus){
         if(left_num!=0) continue;
         else {
-          if(is_first!=3){
+          if(is_first<3){
             op=i;
             is_first=2;
           }
@@ -216,16 +234,16 @@ static word_t eval(int p, int q,bool *ok) {
     }
     switch (tokens[op].type) {
       case TK_plus: 
-        printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1+val2);
+        //printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1+val2);
         return val1 + val2;
       case TK_minus: 
-        printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1-val2);
+       // printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1-val2);
         return val1-val2;
       case TK_mul: 
-       printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1*val2);
+       //printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1*val2);
        return val1*val2;
       case TK_del: 
-       printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1/val2);
+      // printf("符号为%d %d %d %d\n",tokens[op].type,val1,val2,val1/val2);
        if(val2==0){
         *ok=false;
         return 0;
@@ -235,10 +253,14 @@ static word_t eval(int p, int q,bool *ok) {
        return val1&&val2;
       case OR:
        return val1||val2;
+      case TK_EQ:
+      return val1==val2;
+      case TK_NEQ:
+       return val1!=val2;
       default: assert(0);
     }
   }
-  return 0;
+      return 0;
 }
 static bool make_token(char *e) {
   int position = 0;
@@ -346,7 +368,7 @@ word_t expr(char *e, bool *success) {
   // }
   word_t ans=eval(0,nr_token-1,success);
   assert(*success);
-  printf("expr:%u\n",ans);
+  printf("expr:%x\n",ans);
   
   /* TODO: Insert codes to evaluate the expression. */
   //TODO();

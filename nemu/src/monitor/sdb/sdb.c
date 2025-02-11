@@ -53,9 +53,10 @@ static int cmd_q(char *args) {
 
 static int cmd_help(char *args);
 static int cmd_si(char *args){
+  char* arg = strtok(args, " ");
   int step;
-  if(args==NULL) step=1;
-  else sscanf(args,"%d",&step);
+  if(arg==NULL) step=1;
+  else sscanf(arg,"%d",&step);
   cpu_exec(step);
   return 0;
 }
@@ -108,19 +109,21 @@ static int cmd_info(char *args){
 //   }return 0;
 // }
 static int cmd_x(char * args){
-  char * n=strtok(args," ");
+  char * n=strtok(NULL," ");
   char * base_addr=strtok(NULL," ");
   int len;
   sscanf(n,"%d",&len);
-  paddr_t addr;
-  sscanf(base_addr,"%x",&addr);
+  //paddr_t addr;
+  //sscanf(base_addr,"%x",&addr);
+  bool flag=true;
+  word_t p_addr=expr(base_addr, &flag);
   //printf("%d %x",len,addr);
   for(int i=0;i<len;i++){
-    printf("地址：0x%x ",addr);
+    printf("地址：0x%x ",p_addr);
     for(int j=0;j<4;j++){
-      printf("0x%x ",paddr_read(addr+j,1));
+      printf("0x%x ",paddr_read(p_addr+j,1));
     }
-    addr+=4;
+    p_addr+=4;
     printf("\n");
 
   }
@@ -228,36 +231,7 @@ void sdb_mainloop() {
     if (i == NR_CMD) { printf("Unknown command '%s'\n", cmd); }
   }
 }
-void test_expr() {
-  FILE *fp = fopen("/home/hxy/Desktop/ysyx-workbench/nemu/tools/gen-expr/build/input", "r");
-  if (fp == NULL) perror("test_expr error");
 
-  char *e = NULL;
-  word_t correct_res;
-  size_t len = 0;
-  ssize_t read;
-  bool success = false;
-
-  while (true) {
-    if(fscanf(fp, "%u ", &correct_res) == -1) break;
-    e=NULL;
-    read = getline(&e, &len, fp);
-    e[read-1] = '\0';
-    //printf("e为%c，read为%ld\n",e[read-2],read);
-    word_t res = expr(e, &success);
-    assert(success);
-    if (res != correct_res) {
-      puts(e);
-      printf("expected: %u, got: %u\n", correct_res, res);
-      assert(0);
-    }
-  }
-
-  fclose(fp);
-  if (e) free(e);
-
-  Log("expr test pass");
-}
 void init_sdb() {
   /* Compile the regular expressions. */
   init_regex();
