@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "Vtop.h"
 #include "verilated_vcd_c.h"
+#include "svdpi.h"
 #include<iostream>
 using namespace std;
 static Vtop dut;
@@ -14,7 +15,15 @@ static void single_cycle() {
     dut.clk = 0;dut.eval();
     dut.clk = 1; dut.eval();
   }
-  
+  enum Npc_State {
+        running,
+        stop
+};
+static  Npc_State npc_state=running;
+extern "C" void npc_trap(){
+  npc_state=stop;
+  printf("%x\n",dut.pc); 
+}
   static void reset(int n) {
     dut.rst = 1;
     while (n -- > 0) single_cycle();
@@ -32,7 +41,7 @@ int main(int argc,char **argv)
     tfp->open("wave.vcd"); //打开vcd
     reset(10);
     
-    for(int i=0;i<12;i++){
+    for(;npc_state==running;){
         dut.clk=!dut.clk;
         dut.inst=get_inst(memory,dut.pc);
         dut.eval();
