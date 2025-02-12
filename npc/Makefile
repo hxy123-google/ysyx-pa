@@ -24,6 +24,7 @@ $(shell mkdir -p $(BUILD_DIR))
 # project source
 VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
 CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+
 # CSRCS += $(SRC_AUTO_BIND)
 # rules for NVBoard
 
@@ -33,10 +34,13 @@ CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
 
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
+	@echo $(VSRCS)
+	@echo $(CSRCS)
 	@rm -rf $(OBJ_DIR)
 	$(VERILATOR) $(VERILATOR_CFLAGS) \
 		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
+		-CFLAGS -I$(NPC_HOME)/csrc/include \
 		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
 all:
 	@echo "Write this Makefile by your self."
@@ -50,4 +54,4 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 .PHONY: default all clean run
-# include ../Makefile
+ include ../Makefile

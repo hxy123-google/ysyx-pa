@@ -5,12 +5,13 @@
 #include "Vtop.h"
 #include "verilated_vcd_c.h"
 #include "svdpi.h"
-#include<iostream>
-using namespace std;
+#include "npc.h"
 static Vtop dut;
-uint32_t* init_pmem(uint32_t size);
-uint32_t guest_to_host(uint32_t addr);
-uint32_t get_inst(uint32_t * memory,uint32_t paddr);
+static uint32_t *pmem = NULL;
+VerilatedVcdC* tfp; //导出vcd波形需要加此语句
+VerilatedContext* contextp;
+
+
 static void single_cycle() {
     dut.clk = 0;dut.eval();
     dut.clk = 1; dut.eval();
@@ -29,25 +30,28 @@ extern "C" void npc_trap(){
     while (n -- > 0) single_cycle();
     dut.rst = 0;
   }
-int main(int argc,char **argv)
-{   //bool is_first=true;
-    uint32_t *memory;
-    memory=init_pmem(4);
-    // Verilated::commandArgs(argc,argv);
-    Verilated::traceEverOn(true); //导出vcd波形需要加此语句
-    VerilatedVcdC* tfp = new VerilatedVcdC(); //导出vcd波形需要加此语句
-    VerilatedContext* contextp = new VerilatedContext;
+void init_verilator(){
+  Verilated::traceEverOn(true); //导出vcd波形需要加此语句
+    tfp = new VerilatedVcdC(); //导出vcd波形需要加此语句
+    contextp = new VerilatedContext;
     dut.trace(tfp, 10);
     tfp->open("wave.vcd"); //打开vcd
     reset(10);
-    
-    for(;npc_state==running;){
-        dut.clk=!dut.clk;
-        dut.inst=get_inst(memory,dut.pc);
-        dut.eval();
-        tfp->dump(contextp->time());
-        contextp->timeInc(1);
-    }
-     tfp->close();
-     return 0;
+}
+void cpu_exec(){
+  for(;npc_state==running;){
+    dut.clk=!dut.clk;
+    dut.inst=paddr_read(dut.pc,4);
+    dut.eval();
+    tfp->dump(contextp->time());
+    contextp->timeInc(1);
+}
+};
+int main(int argc,char **argv){
+    init_mem(); 
+    init_isa();
+    init_verilator();
+    cpu_exec();
+    tfp->close();
+    return 0;
 }
