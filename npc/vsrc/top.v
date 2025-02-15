@@ -15,9 +15,7 @@ my_pc u_my_pc(
 );
 
 idu u_idu(
-    .opcode(inst[6:0]),
-    .f7(inst[31:25]),
-    .f3(inst[14:12]),
+    .inst(inst),
     .AluControl(AluControl),
     .pc(pc)
 );
