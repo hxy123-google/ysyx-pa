@@ -2,13 +2,17 @@ module idu(
     input [6:0] opcode,
     input [2:0] f3,
     input [6:0] f7,
-    output [2:0] AluControl
+    input [31:0] pc,
+    output reg [2:0] AluControl
 );
 import "DPI-C" function void npc_trap();
-assign AluControl=3'b000;
+import "DPI-C" function void set_npc_state(int state,input int pc,int halt_ret); 
+//assign AluControl=3'b000;
 always@(*) begin
-    if(opcode==7'b1110011)begin
-        npc_trap();
-    end
+    case (opcode)
+        7'b1110011: npc_trap();
+        7'b0010011: AluControl=3'b000;
+        default: set_npc_state(32'd3,pc,32'b1);
+    endcase    
 end
 endmodule

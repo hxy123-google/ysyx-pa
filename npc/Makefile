@@ -1,3 +1,63 @@
+# # VSRC = $(wildcard ./vsrc/our_OnOff.v)
+# # CSRC = $(wildcard ./csrc/main.cpp)
+# TOPNAME = top
+# NXDC_FILES = constr/top.nxdc
+# INC_PATH ?=
+
+# VERILATOR = verilator
+# VERILATOR_CFLAGS += -MMD --build -cc  \
+# 				-O3 --x-assign fast --x-initial fast --noassert --trace
+
+# BUILD_DIR = ./build
+# OBJ_DIR = $(BUILD_DIR)/obj_dir
+# BIN = $(BUILD_DIR)/$(TOPNAME)
+
+# default: $(BIN)
+
+# $(shell mkdir -p $(BUILD_DIR))
+
+# # constraint file
+# # SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)
+# # $(SRC_AUTO_BIND): $(NXDC_FILES)
+# # 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
+
+# # project source
+# VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
+# CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+
+# # CSRCS += $(SRC_AUTO_BIND)
+# # rules for NVBoard
+
+# # rules for verilator
+# INCFLAGS = $(addprefix -I, $(INC_PATH))
+# CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
+
+
+# $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE) $(BINARY)
+# 	@echo $(VSRCS)
+# 	@echo $(CSRCS)
+# 	@rm -rf $(OBJ_DIR)
+# 	$(VERILATOR) $(VERILATOR_CFLAGS) \
+# 		--top-module $(TOPNAME) $^ \
+# 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
+# 		-CFLAGS -I$(NPC_HOME)/csrc/include\
+
+		
+# all:
+# 	@echo "Write this Makefile by your self."
+
+# run: $(BIN)
+# 	@$^
+
+# sim: $(BIN)
+# 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
+# 	@$^
+	
+# clean:
+# 	rm -rf $(BUILD_DIR)
+
+# .PHONY: default all clean run
+#  include ../Makefile
 # VSRC = $(wildcard ./vsrc/our_OnOff.v)
 # CSRC = $(wildcard ./csrc/main.cpp)
 TOPNAME = top
@@ -45,11 +105,11 @@ $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 all:
 	@echo "Write this Makefile by your self."
 
-run: $(BIN)
-	@$^
+run: $(BIN) $(ARGS) $(IMG) 
+	@$^ $(ARGS) $(IMG) 
 sim: $(BIN)
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
-	@$^
+	@$^ $(ARGS) $(IMG)
 clean:
 	rm -rf $(BUILD_DIR)
 

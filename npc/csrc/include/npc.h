@@ -5,8 +5,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include<stdint.h>
-#define CONFIG_MBASE 0x80000000
-typedef uint32_t paddr_t;
+#include<utils.h>
+#include<debug.h>
+// #define CONFIG_MBASE 0x80000000
+// typedef uint32_t paddr_t;
 extern void init_mem();
 extern void init_isa();
 extern uint32_t paddr_read(paddr_t addr, int len);

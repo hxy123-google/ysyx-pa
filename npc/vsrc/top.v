@@ -18,7 +18,8 @@ idu u_idu(
     .opcode(inst[6:0]),
     .f7(inst[31:25]),
     .f3(inst[14:12]),
-    .AluControl(AluControl)
+    .AluControl(AluControl),
+    .pc(pc)
 );
 imm u_imm(
     .inst(inst),
