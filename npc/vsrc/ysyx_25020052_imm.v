@@ -1,4 +1,4 @@
-module imm(
+module ysyx_25020052_imm(
     input [31:0] inst,
     output [31:0] imm_data
 );

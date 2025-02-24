@@ -60,7 +60,7 @@
 #  include ../Makefile
 # VSRC = $(wildcard ./vsrc/our_OnOff.v)
 # CSRC = $(wildcard ./csrc/main.cpp)
-TOPNAME = top
+TOPNAME =ysyx_25020052_top
 NXDC_FILES = constr/top.nxdc
 INC_PATH ?=
 

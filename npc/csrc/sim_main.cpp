@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
-#include "Vtop.h"
+#include "Vysyx_25020052_top.h"
 #include "verilated_vcd_c.h"
 #include "svdpi.h"
 #include "npc.h"
 #include <debug.h>
-static Vtop dut;
+static Vysyx_25020052_top dut;
 static uint32_t *pmem = NULL;
 VerilatedVcdC *tfp; // 导出vcd波形需要加此语句
 VerilatedContext *contextp;

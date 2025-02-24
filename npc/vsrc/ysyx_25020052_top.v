@@ -1,4 +1,4 @@
-module top(
+module ysyx_25020052_top(
     input clk,
     input rst,
     output [31:0] pc,
@@ -12,13 +12,13 @@ wire [4:0] rd,rs1,rs2;
 wire [31:0] a_in;
 wire [31:0] b_in;
 wire [2:0] inst_type;
-my_pc u_my_pc(
+ysyx_25020052_my_pc u_my_pc(
     .clk    	(clk     ),
     .pc     	(pc      ),
     .rst        (rst     )
 );
 // output declaration of module idu
-idu u_idu(
+ysyx_25020052_idu u_idu(
     .inst       	(inst        ),
     .pc         	(pc          ),
     .rs1        	(rs1         ),
@@ -28,11 +28,11 @@ idu u_idu(
     .inst_type      (inst_type)
 );
 
-imm u_imm(
+ysyx_25020052_imm u_imm(
     .inst(inst),
     .imm_data(imm_data)
 );
-gpr u_gpr(
+ysyx_25020052_gpr u_gpr(
     .waddr(rd),
     .wdata(result),
     .raddr1(rs1),
@@ -42,13 +42,13 @@ gpr u_gpr(
     .clk(clk)
 );
 assign a_in=src1;
-alu u_alu(
+ysyx_25020052_alu u_alu(
     .a(a_in),
     .b(b_in),
     .result(result),
     .AluControl(AluControl)
 );
-MuxKey #(1, 3, 32) i0(b_in, inst_type, {
+ysyx_25020052_MuxKey #(1, 3, 32) i0(b_in, inst_type, {
     3'b001, imm_data
   });
 endmodule

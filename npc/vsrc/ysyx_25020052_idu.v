@@ -1,4 +1,4 @@
-module idu(
+module ysyx_25020052_idu(
     input [31:0] inst,
     input [31:0] pc,
     output [4:0] rs1,

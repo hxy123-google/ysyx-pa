@@ -65,6 +65,10 @@ WP* new_wp(){
 void free_wp(int num){
   WP* p=NULL;
   WP* temp=NULL;
+  if(head==NULL){
+    printf("无找到匹配的\n");
+    return;
+  }
   if(num==head->NO){
     temp=head;
     if(head->NO==n_tail->NO){
@@ -86,7 +90,7 @@ void free_wp(int num){
   }
   for(p=head;p->next!=NULL;p=p->next){
     if(p->next->NO==num){
-      if(p->next->next==NULL) n_tail=p;
+      if(p->next->next==NULL) n_tail=p;//如果删去的是最后一个
       temp=p->next;
       p->next=p->next->next;
       temp->next=NULL;
