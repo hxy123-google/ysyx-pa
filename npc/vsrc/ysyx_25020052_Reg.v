@@ -5,7 +5,7 @@ module ysyx_25020052_Reg #(WIDTH = 1, RESET_VAL = 0) (
   output reg [WIDTH-1:0] dout,
   input wen
 );
-  always @(posedge clk) begin
+  always @(posedge clk or posedge rst) begin
     if (rst) dout <= RESET_VAL;
     else if (wen) dout <= din;
   end

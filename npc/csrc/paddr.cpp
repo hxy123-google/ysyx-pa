@@ -16,7 +16,7 @@
 #include<stdlib.h>
 #include<stdint.h>
 #include<assert.h>
-#include "npc.h"
+#include"npc.h"
 static uint8_t *pmem = NULL;
 uint8_t* guest_to_host(uint32_t paddr) { return pmem + paddr - CONFIG_MBASE; }
 
@@ -43,13 +43,18 @@ void init_mem() {
   //printf("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
 }
 
-uint32_t paddr_read(uint32_t addr, int len) {
+
+extern "C" uint32_t paddr_read(uint32_t addr, int len) {
    //printf("pread at " FMT_PADDR " len=%d\n", addr, len);
   //if (likely(in_pmem(addr))) 
+  //printf("0x%x\n",addr);
+  //if(addr==0) addr=0x80000000;
+  //uint32_t t=pmem_read(addr,len);
+  //printf("0x%x\n",t);
   return pmem_read(addr, len);
 //   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
 //   out_of_bound(addr);
-  return 0;
+  //return 0;
 }
 
 // void paddr_write(paddr_t addr, int len, word_t data) {

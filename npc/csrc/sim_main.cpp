@@ -5,22 +5,23 @@
 #include "Vysyx_25020052_top.h"
 #include "verilated_vcd_c.h"
 #include "svdpi.h"
-#include "npc.h"
 #include <debug.h>
+#include "npc.h"
+extern NPCState npc_state = { .state = NPC_STOP };
 static Vysyx_25020052_top dut;
 static uint32_t *pmem = NULL;
 VerilatedVcdC *tfp; // 导出vcd波形需要加此语句
 VerilatedContext *contextp;
-
+int is_exit_status_bad();
 void init_monitor(int argc, char *argv[]);
 static void single_cycle()
 {
   dut.clk = 0;
+  dut.pc=2147483648;
   dut.eval();
   dut.clk = 1;
   dut.eval();
 }
-NPCState npc_state{.state = NPC_STOP};
 extern "C" void npc_trap()
 {
   npc_state.state = NPC_END;
@@ -49,13 +50,14 @@ void init_verilator()
   dut.trace(tfp, 10);
   tfp->open("wave.vcd"); // 打开vcd
   reset(10);
-}
+};
 void cpu_exec()
-{ npc_state.state=NPC_RUNNING;
+{ 
+  npc_state.state=NPC_RUNNING;
   for (; npc_state.state == NPC_RUNNING;)
   {
     dut.clk = !dut.clk;
-    dut.inst = paddr_read(dut.pc, 4);
+    //dut.inst = paddr_read(dut.pc, 4);
     dut.eval();
     tfp->dump(contextp->time());
     contextp->timeInc(1);
@@ -76,6 +78,11 @@ void cpu_exec()
   //   statistic();
   }
 };
+int is_exit_status_bad() {
+  int good = (npc_state.state == NPC_END && npc_state.halt_ret == 0) ||
+    (npc_state.state == NPC_QUIT);
+  return !good;
+}
 int main(int argc, char *argv[])
 {
   for (int i = 0; i < argc; i++)
@@ -86,5 +93,5 @@ int main(int argc, char *argv[])
   init_verilator();
   cpu_exec();
   tfp->close();
-  return 0;
+  return is_exit_status_bad();
 }
