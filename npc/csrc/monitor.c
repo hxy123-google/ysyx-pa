@@ -25,7 +25,7 @@ static void welcome() {
         "If it is not necessary, you can disable it in menuconfig"));
   Log("Build time: %s, %s", __TIME__, __DATE__);
   Log("Welcome to %s-NPC!\n", ANSI_FMT(str(__GUEST_ISA__), ANSI_FG_YELLOW ANSI_BG_RED));
-  Log("Welcome to Nemu For help, type \"help\"\n");
+  Log("Welcome to NPC For help, type \"help\"\n");
   //Log("Exercise: Please remove me in the source code and compile NEMU again.");
   //assert(0);
 }

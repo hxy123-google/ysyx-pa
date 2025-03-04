@@ -18,8 +18,9 @@
 #include<assert.h>
 #include"npc.h"
 static uint8_t *pmem = NULL;
+NPCState npc_state = { .state = NPC_STOP };
 uint8_t* guest_to_host(uint32_t paddr) { return pmem + paddr - CONFIG_MBASE; }
-
+void exec_once();
 static uint32_t pmem_read(uint32_t addr, int len) {
   uint32_t ret = host_read(guest_to_host(addr), len);
   return ret;
@@ -63,3 +64,31 @@ extern "C" uint32_t paddr_read(uint32_t addr, int len) {
 //   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
 //   out_of_bound(addr);
 // }
+void cpu_exec()
+{ 
+  npc_state.state=NPC_RUNNING;
+  for (; npc_state.state == NPC_RUNNING;)
+  {
+    exec_once();
+  }
+  switch (npc_state.state)
+  {
+  case NPC_RUNNING:
+    npc_state.state = NPC_STOP;
+    break;
+
+  case NPC_END:
+  case NPC_ABORT:
+    Log("npc: %s at pc = " FMT_WORD,
+        (npc_state.state == NPC_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) : (npc_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) : ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
+        npc_state.halt_pc);
+    // fall through
+  // case NPC_QUIT:
+  //   statistic();
+  }
+};
+int is_exit_status_bad() {
+  int good = (npc_state.state == NPC_END && npc_state.halt_ret == 0) ||
+    (npc_state.state == NPC_QUIT);
+  return !good;
+}

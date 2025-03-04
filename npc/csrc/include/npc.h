@@ -5,14 +5,13 @@
 #include <stdbool.h>
 #include <string.h>
 #include<stdint.h>
-#include<utils.h>
 #include<debug.h>
-
+#include"utils.h"
 // #define CONFIG_MBASE 0x80000000
 // typedef uint32_t paddr_t;
-extern void init_mem();
-extern void init_isa();
-extern uint8_t* guest_to_host(paddr_t paddr);
+void init_mem();
+void init_isa();
+uint8_t* guest_to_host(paddr_t paddr);
 static inline paddr_t host_read(void *addr, int len) {
     switch (len) {
       case 1: return *(uint8_t  *)addr;
