@@ -64,12 +64,12 @@ extern "C" uint32_t paddr_read(uint32_t addr, int len) {
 //   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
 //   out_of_bound(addr);
 // }
-void cpu_exec()
-{ 
+void cpu_exec(uint64_t n){ 
   npc_state.state=NPC_RUNNING;
-  for (; npc_state.state == NPC_RUNNING;)
+  for (;n > 0; n --)
   {
     exec_once();
+    if(npc_state.state!=NPC_RUNNING) break;
   }
   switch (npc_state.state)
   {

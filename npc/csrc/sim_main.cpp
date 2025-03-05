@@ -68,35 +68,8 @@ void exec_once(){
   tfp->dump(contextp->time());
   contextp->timeInc(1);
 }
-void cpu_exec();
-// { 
-//   npc_state.state=NPC_RUNNING;
-//   for (; npc_state.state == NPC_RUNNING;)
-//   {
-//     exec_once();
-//   }
-//   switch (npc_state.state)
-//   {
-//   case NPC_RUNNING:
-//     npc_state.state = NPC_STOP;
-//     break;
-
-//   case NPC_END:
-//   case NPC_ABORT:
-//     Log("npc: %s at pc = " FMT_WORD,
-//         (npc_state.state == NPC_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) : (npc_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) : ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
-//         npc_state.halt_pc);
-//     // fall through
-//   // case NPC_QUIT:
-//   //   statistic();
-//   }
-// };
-int is_exit_status_bad(); 
-// {
-//   int good = (npc_state.state == NPC_END && npc_state.halt_ret == 0) ||
-//     (npc_state.state == NPC_QUIT);
-//   return !good;
-// }
+void sdb_mainloop();
+//void cpu_exec();
 int main(int argc, char *argv[])
 {
   for (int i = 0; i < argc; i++)
@@ -105,10 +78,11 @@ int main(int argc, char *argv[])
   }
   init_monitor(argc, argv);
   init_verilator();
-  cpu_exec();
+  sdb_mainloop();
+  //cpu_exec();
   tfp->close();
-  for(int i=0;i<32;i++){
-    printf("%d %d\n",i,reg_c[i]);
-  }
+  // for(int i=0;i<32;i++){
+  //   printf("%d %d\n",i,reg_c[i]);
+  // }
   return is_exit_status_bad();
 }

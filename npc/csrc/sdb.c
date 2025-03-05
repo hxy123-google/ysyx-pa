@@ -12,16 +12,18 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-#include <isa.h>
-#include <cpu/cpu.h>
+#include <stdlib.h>
+// #include <cpu/cpu.h>
 #include <readline/readline.h>
-#include <readline/history.h>
-#include "sdb.h"
-#include <memory/vaddr.h>
-#include <memory/paddr.h>
-#include "watchpoint.h"
+ #include <readline/history.h>
+ #include "npc.h"
+// #include "sdb.h"
+// #include <memory/vaddr.h>
+// #include <memory/paddr.h>
+// #include "watchpoint.h"
  static int is_batch_mode = false;
 void init_regex();
+void cpu_exec(uint64_t n);
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
   static char *line_read = NULL;
@@ -31,7 +33,7 @@ static char* rl_gets() {
     line_read = NULL;
   }
 
-  line_read = readline("(nemu) ");
+  line_read = readline("(npc) ");
 
   if (line_read && *line_read) {
     add_history(line_read);
@@ -47,67 +49,67 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
-  nemu_state.state=NEMU_QUIT;
+  npc_state.state=NPC_QUIT;
   return -1;
 }
 
 static int cmd_help(char *args);
-static int cmd_si(char *args){
-  char* arg = strtok(args, " ");
-  int step;
-  if(arg==NULL) step=1;
-  else sscanf(arg,"%d",&step);
-  cpu_exec(step);
-  return 0;
-}
-static int cmd_info(char *args){
-  char SUBCMD;
-  sscanf(args,"%c",&SUBCMD);
-  if(SUBCMD=='r') isa_reg_display();
-  else if(SUBCMD=='w'){
-    display_watchpoint();
-  }
-  return 0;
-}
-static int cmd_x(char * args){
-  char * n=strtok(NULL," ");
-  char * base_addr=strtok(NULL," ");
-  int len;
-  sscanf(n,"%d",&len);
-  //paddr_t addr;
-  //sscanf(base_addr,"%x",&addr);
-  bool flag=true;
-  word_t p_addr=expr(base_addr, &flag);
-  //printf("%d %x",len,addr);
-  for(int i=0;i<len;i++){
-    printf("地址：0x%x ",p_addr);
-    for(int j=0;j<4;j++){
-      printf("0x%x ",paddr_read(p_addr+j,1));
-    }
-    p_addr+=4;
-    printf("\n");
+// static int cmd_si(char *args){
+//   char* arg = strtok(args, " ");
+//   int step;
+//   if(arg==NULL) step=1;
+//   else sscanf(arg,"%d",&step);
+//   cpu_exec(step);
+//   return 0;
+// }
+// static int cmd_info(char *args){
+//   char SUBCMD;
+//   sscanf(args,"%c",&SUBCMD);
+//   if(SUBCMD=='r') isa_reg_display();
+//   else if(SUBCMD=='w'){
+//     display_watchpoint();
+//   }
+//   return 0;
+// }
+// static int cmd_x(char * args){
+//   char * n=strtok(NULL," ");
+//   char * base_addr=strtok(NULL," ");
+//   int len;
+//   sscanf(n,"%d",&len);
+//   //paddr_t addr;
+//   //sscanf(base_addr,"%x",&addr);
+//   bool flag=true;
+//   word_t p_addr=expr(base_addr, &flag);
+//   //printf("%d %x",len,addr);
+//   for(int i=0;i<len;i++){
+//     printf("地址：0x%x ",p_addr);
+//     for(int j=0;j<4;j++){
+//       printf("0x%x ",paddr_read(p_addr+j,1));
+//     }
+//     p_addr+=4;
+//     printf("\n");
 
-  }
-  return 0;
-}
-static int cmd_p(char*args){
-    if(args == NULL){
-         printf("No args\n");
-         return 0;
-     }
-    bool flag = false;
-    expr(args, &flag);
+//   }
+//   return 0;
+// }
+// static int cmd_p(char*args){
+//     if(args == NULL){
+//          printf("No args\n");
+//          return 0;
+//      }
+//     bool flag = false;
+//     expr(args, &flag);
 
-    return 0;
-}
-static int cmd_w(char*args){
-  create_watchpoint(args);
-  return 0;
-}
-static int cmd_d(char*args){
-  free_wp(atoi(args));
-  return 0;
-}
+//     return 0;
+// }
+// static int cmd_w(char*args){
+//   create_watchpoint(args);
+//   return 0;
+// }
+// static int cmd_d(char*args){
+//   free_wp(atoi(args));
+//   return 0;
+// }
 static struct {
   const char *name;
   const char *description;
@@ -116,12 +118,12 @@ static struct {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
-  {"si","让程序单步执行N条指令后暂停执行, 当N没有给出时, 缺省为1",cmd_si},
-  {"info", "info r: 打印寄存器状态\ninfo w :打印监视点信息",cmd_info},
-  {"x","求出表达式EXPR的值, 将结果作为起始内存地址, 以十六进制形式输出连续的N个4字节",cmd_x},
-  {"p","求出表达式EXPR的值, EXPR支持的运算请见调试中的表达式求值小节",cmd_p},
-  {"w","当表达式EXPR的值发生变化时, 暂停程序执行",cmd_w},
-  {"d","删除序号为N的监视点",cmd_d}
+  //{"si","让程序单步执行N条指令后暂停执行, 当N没有给出时, 缺省为1",cmd_si},
+  //{"info", "info r: 打印寄存器状态\ninfo w :打印监视点信息",cmd_info},
+  //{"x","求出表达式EXPR的值, 将结果作为起始内存地址, 以十六进制形式输出连续的N个4字节",cmd_x},
+  //{"p","求出表达式EXPR的值, EXPR支持的运算请见调试中的表达式求值小节",cmd_p},
+  //{"w","当表达式EXPR的值发生变化时, 暂停程序执行",cmd_w},
+  //{"d","删除序号为N的监视点",cmd_d}
   /* TODO: Add more commands */
   
 };
@@ -193,10 +195,10 @@ void sdb_mainloop() {
   }
 }
 
-void init_sdb() {
-  /* Compile the regular expressions. */
-  init_regex();
-  //test_expr();
-  /* Initialize the watchpoint pool. */
-  init_wp_pool();
-}
+// void init_sdb() {
+//   /* Compile the regular expressions. */
+//   init_regex();
+//   test_expr();
+//   /* Initialize the watchpoint pool. */
+//    init_wp_pool();
+// }
