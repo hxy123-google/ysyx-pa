@@ -23,6 +23,7 @@
 // #include "watchpoint.h"
  static int is_batch_mode = false;
 void init_regex();
+void isa_reg_display();
 void cpu_exec(uint64_t n);
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
@@ -54,23 +55,20 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_help(char *args);
-// static int cmd_si(char *args){
-//   char* arg = strtok(args, " ");
-//   int step;
-//   if(arg==NULL) step=1;
-//   else sscanf(arg,"%d",&step);
-//   cpu_exec(step);
-//   return 0;
-// }
-// static int cmd_info(char *args){
-//   char SUBCMD;
-//   sscanf(args,"%c",&SUBCMD);
-//   if(SUBCMD=='r') isa_reg_display();
-//   else if(SUBCMD=='w'){
-//     display_watchpoint();
-//   }
-//   return 0;
-// }
+static int cmd_si(char *args){
+  char* arg = strtok(args, " ");
+  int step;
+  if(arg==NULL) step=1;
+  else sscanf(arg,"%d",&step);
+  cpu_exec(step);
+  return 0;
+}
+static int cmd_info(char *args){
+  char SUBCMD;
+  sscanf(args,"%c",&SUBCMD);
+  if(SUBCMD=='r') isa_reg_display();
+  return 0;
+}
 // static int cmd_x(char * args){
 //   char * n=strtok(NULL," ");
 //   char * base_addr=strtok(NULL," ");
@@ -118,8 +116,8 @@ static struct {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
-  //{"si","让程序单步执行N条指令后暂停执行, 当N没有给出时, 缺省为1",cmd_si},
-  //{"info", "info r: 打印寄存器状态\ninfo w :打印监视点信息",cmd_info},
+  {"si","让程序单步执行N条指令后暂停执行, 当N没有给出时, 缺省为1",cmd_si},
+  {"info", "info r: 打印寄存器状态\ninfo w :打印监视点信息",cmd_info},
   //{"x","求出表达式EXPR的值, 将结果作为起始内存地址, 以十六进制形式输出连续的N个4字节",cmd_x},
   //{"p","求出表达式EXPR的值, EXPR支持的运算请见调试中的表达式求值小节",cmd_p},
   //{"w","当表达式EXPR的值发生变化时, 暂停程序执行",cmd_w},

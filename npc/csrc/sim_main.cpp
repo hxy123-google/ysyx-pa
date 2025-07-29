@@ -7,19 +7,24 @@
 #include "svdpi.h"
 #include <debug.h>
 #include "npc.h"
-#include "verilated_dpi.h"
+// #include "Vysyx_25020052_top__Dpi.h"
+ #include "verilated_dpi.h"
 // extern NPCState npc_state = { .state = NPC_STOP };
 static Vysyx_25020052_top dut;
 static uint32_t *pmem = NULL;
 VerilatedVcdC *tfp; // 导出vcd波形需要加此语句
 VerilatedContext *contextp;
 int is_exit_status_bad();
+void isa_reg_display();
 void init_monitor(int argc, char *argv[]);
-uint32_t* reg_c=nullptr;
+extern uint32_t* reg_c;
 extern "C" void get_reg(const svOpenArrayHandle r){
   reg_c = (uint32_t *)(((VerilatedDpiOpenVar*)r)->datap());
 }
+
 // enum { NPC_RUNNING, NPC_STOP, NPC_END, NPC_ABORT, NPC_QUIT };
+// extern void get_reg();
+
 static void single_cycle()
 {
   dut.clk = 0;
@@ -35,7 +40,7 @@ extern "C" void npc_trap()
   npc_state.halt_ret = 0;
   printf("%x\n", npc_state.halt_pc);
 }
-extern "C" void set_npc_state(int state, paddr_t pc, int halt_ret) {
+extern "C" void set_npc_state(int state, int pc, int halt_ret) {
   //difftest_skip_ref();
   npc_state.state = state;
   npc_state.halt_pc = pc;
@@ -67,6 +72,9 @@ void exec_once(){
   dut.eval();
   tfp->dump(contextp->time());
   contextp->timeInc(1);
+  printf("pc:%x ",dut.pc);
+  //isa_reg_display() ;
+  printf("%x\n",dut.inst);
 }
 void sdb_mainloop();
 //void cpu_exec();

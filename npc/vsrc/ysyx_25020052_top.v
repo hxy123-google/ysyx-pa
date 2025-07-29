@@ -1,10 +1,11 @@
 module ysyx_25020052_top(
     input clk,
     input rst,
-    output [31:0] pc
+    output [31:0] pc,
+    output reg [31:0] inst
 );
 import "DPI-C" function int unsigned paddr_read(int unsigned addr, int len);
-reg [31:0] inst;
+// import "DPI-C" function void get_inst(input logic [31:0] inst);
 wire [2:0] AluControl;
 wire [31:0] result;
 wire [31:0] src1;
@@ -38,6 +39,7 @@ ysyx_25020052_idu u_idu(
 );
 always@(pc) begin
     inst=paddr_read(pc,32'b0100);
+    //$display("pc:%h,inst:%h",pc,inst);
 end
 ysyx_25020052_imm u_imm(
     .inst(inst),
